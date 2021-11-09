@@ -252,7 +252,7 @@ echo $SUBDOMAIN
 ----
 kubectl -n $KAFKA_NAMESPACE exec -it $KAFKA_BROKER_POD -c kafka -- bin/kafka-topics.sh \
     --list \
-    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.demo.svc:9092
+    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.$KAFKA_NAMESPACE.svc:9092
 ----
 
 image::2-10-2020-11-35-33-AM.png[] 
@@ -260,7 +260,7 @@ image::2-10-2020-11-35-33-AM.png[]
 [source,bash]
 ----
 kubectl -n $KAFKA_NAMESPACE exec -it $KAFKA_BROKER_POD -c kafka -- bin/kafka-topics.sh \
-    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.demo.svc:9092 \
+    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.$KAFKA_NAMESPACE.svc:9092 \
     --topic first-topic \
     --describe
 ----
@@ -275,7 +275,7 @@ Create topic using kafka-topics.sh
 ----
 kubectl -n $KAFKA_NAMESPACE exec -it $KAFKA_BROKER_POD -c kafka -- bin/kafka-topics.sh \
     --create \
-    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.demo.svc:9092 \
+    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.$KAFKA_NAMESPACE.svc:9092 \
     --replication-factor 1 \
     --partitions 2 \
     --topic second-topic
@@ -287,7 +287,7 @@ List topics
 ----
 kubectl -n $KAFKA_NAMESPACE exec -it $KAFKA_BROKER_POD -c kafka -- bin/kafka-topics.sh \
     --list \
-    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.demo.svc:9092
+    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.$KAFKA_NAMESPACE.svc:9092
 ----
 
 image::2-10-2020-17-30-37-PM.png[] 
