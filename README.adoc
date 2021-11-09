@@ -85,31 +85,39 @@ image::2-10-2020-10-00-35-AM.png[]
 
 [source,yaml]
 ----
-apiVersion: kafka.strimzi.io/v1beta1
+apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
   name: my-cluster
 spec:
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
   kafka:
-    version: 2.5.0
-    replicas: 3
-    listeners:
-      plain: {}
-      tls: {}
     config:
       offsets.topic.replication.factor: 3
       transaction.state.log.replication.factor: 3
       transaction.state.log.min.isr: 2
-      log.message.format.version: "2.5"
+      log.message.format.version: '3.0'
+      inter.broker.protocol.version: '3.0'
+    listeners:
+      - name: plain
+        port: 9092
+        type: internal
+        tls: false
+      - name: tls
+        port: 9093
+        type: internal
+        tls: true
+    replicas: 3
     storage:
       type: ephemeral
+    version: 3.0.0
   zookeeper:
     replicas: 3
     storage:
       type: ephemeral
-  entityOperator:
-    topicOperator: {}
-    userOperator: {}
+
 ----
 
 After you cluster is installed, you will see:
@@ -228,6 +236,7 @@ Now let's set some vars
 [source,bash]
 ----
 export KAFKA_NAMESPACE=kafka-demo
+export KAFKA_CLUSTER=my-cluster
 export ZOOKEEPER_HOST=localhost:2181
 export BROKER_HOST=localhost:9092
 export ZOOKEEPER_POD=$(kubectl -n $KAFKA_NAMESPACE get pods -l app.kubernetes.io/name=zookeeper -o=jsonpath='{.items[0].metadata.name}')
@@ -243,7 +252,7 @@ echo $SUBDOMAIN
 ----
 kubectl -n $KAFKA_NAMESPACE exec -it $KAFKA_BROKER_POD -c kafka -- bin/kafka-topics.sh \
     --list \
-    --zookeeper $ZOOKEEPER_HOST
+    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.demo.svc:9092
 ----
 
 image::2-10-2020-11-35-33-AM.png[] 
@@ -251,7 +260,7 @@ image::2-10-2020-11-35-33-AM.png[]
 [source,bash]
 ----
 kubectl -n $KAFKA_NAMESPACE exec -it $KAFKA_BROKER_POD -c kafka -- bin/kafka-topics.sh \
-    --zookeeper $ZOOKEEPER_HOST \
+    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.demo.svc:9092 \
     --topic first-topic \
     --describe
 ----
@@ -266,7 +275,7 @@ Create topic using kafka-topics.sh
 ----
 kubectl -n $KAFKA_NAMESPACE exec -it $KAFKA_BROKER_POD -c kafka -- bin/kafka-topics.sh \
     --create \
-    --zookeeper $ZOOKEEPER_HOST \
+    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.demo.svc:9092 \
     --replication-factor 1 \
     --partitions 2 \
     --topic second-topic
@@ -278,7 +287,7 @@ List topics
 ----
 kubectl -n $KAFKA_NAMESPACE exec -it $KAFKA_BROKER_POD -c kafka -- bin/kafka-topics.sh \
     --list \
-    --zookeeper $ZOOKEEPER_HOST
+    --bootstrap-server $KAFKA_CLUSTER-kafka-bootstrap.demo.svc:9092
 ----
 
 image::2-10-2020-17-30-37-PM.png[] 
@@ -405,7 +414,7 @@ Let's see if it was created corretly:
 [source,bash]
 ----
 kubectl -n $KAFKA_NAMESPACE exec -it $KAFKA_BROKER_POD -c kafka -- bin/kafka-topics.sh \
-    --zookeeper $ZOOKEEPER_HOST \
+    --bootstrap-server $BROKER_HOST \
     --topic forth-topic \
     --describe
 ----
@@ -524,29 +533,9 @@ image::4-10-2020-16-06-58-PM.png[]
 ** Replication Factor: `3`
 * And now click on `Create`
 
-image::4-10-2020-16-45-55-PM.png[] 
+or just create using the yml
 
-* You can use the YAML editor as well:
-
-image::2-10-2020-10-44-10-AM.png[] 
-
-.hundred-topic
-[source,yaml]
-----
-apiVersion: kafka.strimzi.io/v1beta1
-kind: KafkaTopic
-metadata:
-  name: topic-hundred-partitions
-  labels:
-    strimzi.io/cluster: my-cluster
-  namespace: kafka-demo
-spec:
-  config:
-    retention.ms: 604800000
-    segment.bytes: 1073741824
-  partitions: 100
-  replicas: 3
-----
+  kubectl apply -f hundred-topic.yml 
 
 Repeat the same step above and create another topic with the following config:
 
@@ -554,23 +543,7 @@ Repeat the same step above and create another topic with the following config:
 * Partitions: `200`
 * Replication Factor: `3`
 
-.two-hundred-topic
-[source,yaml]
-----
-apiVersion: kafka.strimzi.io/v1beta1
-kind: KafkaTopic
-metadata:
-  name: topic-two-hundred-partitions
-  labels:
-    strimzi.io/cluster: my-cluster
-  namespace: kafka-demo
-spec:
-  config:
-    retention.ms: 604800000
-    segment.bytes: 1073741824
-  partitions: 200
-  replicas: 3
-----
+  kubectl apply -f hundred-topic.yml 
 
 Let's make sure the topic were created:
 
@@ -578,7 +551,7 @@ Let's make sure the topic were created:
 ----
 kubectl -n $KAFKA_NAMESPACE exec -it $KAFKA_BROKER_POD -c kafka -- bin/kafka-topics.sh \
     --list \
-    --zookeeper $ZOOKEEPER_HOST
+    --bootstrap-server $BROKER_HOST
 ----
 
 image::5-10-2020-09-39-36-AM.png[] 
